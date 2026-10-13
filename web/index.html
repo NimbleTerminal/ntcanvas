@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ntcanvas · terminal cells</title>
+  <link rel="stylesheet" href="site.css?v=4">
+</head>
+<body>
+  <header><a class="brand" href="./">ntcanvas<span>Styled terminal cells.</span></a><a href="https://github.com/NimbleTerminal/ntcanvas">Source ↗</a></header>
+  <main>
+    <nav aria-label="Examples">
+      <a href="?demo=grids" data-demo="grids"><strong>Grid comparison</strong><span>Three storage types, Unicode, styles, and single-column rendering.</span></a>
+      <a href="?demo=lines" data-demo="lines"><strong>Lines and coverage</strong><span>Clipped raster lines beside antialiased coverage. Adjust the slope and glyph.</span></a>
+      <a href="?demo=viewports" data-demo="viewports"><strong>Shared viewports</strong><span>One grid, two models. Focus, pan, edit, and resize independently.</span></a>
+      <a href="?demo=logo" data-demo="logo"><strong>Logo canvas</strong><span>The original styled-cell example with keyboard and mouse input.</span></a>
+    </nav>
+    <section class="demo" aria-label="Live terminal example">
+      <div class="toolbar"><h1 id="title">Grid comparison</h1><a id="restart" href="?demo=grids">Restart ↻</a></div>
+      <div id="controls" role="group" aria-label="Terminal controls"></div>
+      <div class="terminal-frame"><div id="terminal"></div></div>
+      <p id="status" role="status">Starting terminal…</p>
+      <p id="help">Click the terminal to focus. Press q to quit; Restart starts a fresh session.</p>
+    </section>
+  </main>
+  <footer>
+    <span>Powered by <a href="https://github.com/NimbleMarkets/go-booba">booba</a>. <a href="LICENSE">Code license</a> · <a href="NOTICE.md">Attribution</a> · <a href="THIRD_PARTY_NOTICES.md">Dependency licenses</a></span>
+    <span class="credit">Made with ❤️🤖🔥 for you by <a href="https://nimbleterminal.com">Nimble Terminal</a></span>
+  </footer>
+  <script src="wasm_exec.js"></script>
+  <script type="module" src="site.js"></script>
+</body>
+</html>
