@@ -1,0 +1,137 @@
+[
+  {
+    "name": "initial",
+    "rows": ["ABCD    ", "ijkl    ", "        ", "        "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 1, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true}
+    ]
+  },
+  {
+    "name": "composed",
+    "rows": ["ABCD    ", "ix y    ", "        ", "        "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 1, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 1, "y": 1, "fg": null, "bg": [0, 0, 255], "bold": false},
+      {"x": 2, "y": 1, "fg": null, "bg": [0, 0, 255], "bold": false},
+      {"x": 3, "y": 1, "fg": null, "bg": [0, 0, 255], "bold": false}
+    ]
+  },
+  {
+    "name": "panned",
+    "rows": ["x ym    ", "2345    ", "        ", "        "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": null, "bg": [0, 0, 255], "bold": false},
+      {"x": 1, "y": 0, "fg": null, "bg": [0, 0, 255], "bold": false},
+      {"x": 2, "y": 0, "fg": null, "bg": [0, 0, 255], "bold": false}
+    ]
+  },
+  {
+    "name": "cleared",
+    "rows": ["  ym    ", "2345    ", "        ", "        "],
+    "styles": [
+      {"x": 2, "y": 0, "fg": null, "bg": [0, 0, 255], "bold": false}
+    ]
+  },
+  {
+    "name": "resized",
+    "rows": ["ABC  ", "i    ", "     "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 1, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true}
+    ]
+  },
+  {
+    "name": "safe-text",
+    "rows": ["�X   ", "     ", "     "],
+    "styles": []
+  } ,
+  {
+    "name": "compact-runes",
+    "rows": ["abc     ", "        ", "        ", "        "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 1, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true},
+      {"x": 2, "y": 0, "fg": [255, 0, 0], "bg": null, "bold": true}
+    ]
+  },
+  {
+    "name": "graphemes",
+    "rows": ["Ae界 👩 🇺 Z   ", "            ", "            "],
+    "styles": [],
+    "clusters": [
+      {"x": 1, "y": 0, "width": 1, "extra": [769]},
+      {"x": 2, "y": 0, "width": 2, "extra": []},
+      {"x": 3, "y": 0, "width": 0, "extra": []},
+      {"x": 4, "y": 0, "width": 2, "extra": [8205, 128187]},
+      {"x": 5, "y": 0, "width": 0, "extra": []},
+      {"x": 6, "y": 0, "width": 2, "extra": [127480]},
+      {"x": 7, "y": 0, "width": 0, "extra": []}
+    ]
+  },
+  {
+    "name": "wide-overwrite",
+    "rows": ["Ae X👩 🇺 Z   ", "            ", "            "],
+    "styles": [],
+    "clusters": [
+      {"x": 1, "y": 0, "width": 1, "extra": [769]},
+      {"x": 4, "y": 0, "width": 2, "extra": [8205, 128187]},
+      {"x": 5, "y": 0, "width": 0, "extra": []},
+      {"x": 6, "y": 0, "width": 2, "extra": [127480]},
+      {"x": 7, "y": 0, "width": 0, "extra": []}
+    ]
+  },
+  {
+    "name": "wide-clipping",
+    "rows": [" 🇺 Z        ", "            ", "            "],
+    "styles": [],
+    "clusters": [
+      {"x": 1, "y": 0, "width": 2, "extra": [127480]},
+      {"x": 2, "y": 0, "width": 0, "extra": []}
+    ]
+  },
+  {
+    "name": "cluster-boundary",
+    "rows": ["🇺 🇸         ", "            ", "            "],
+    "styles": [],
+    "clusters": [
+      {"x": 0, "y": 0, "width": 2, "extra": [8204]},
+      {"x": 1, "y": 0, "width": 0, "extra": []},
+      {"x": 2, "y": 0, "width": 2, "extra": []},
+      {"x": 3, "y": 0, "width": 0, "extra": []}
+    ]
+  },
+  {
+    "name": "single-column-runes",
+    "rows": ["�e����      ", "            "],
+    "styles": []
+  },
+  {
+    "name": "single-column-styled",
+    "rows": ["�e����      ", "            "],
+    "styles": []
+  },
+  {
+    "name": "bounded-clusters",
+    "rows": ["��Z         ", "            "],
+    "styles": []
+  },
+  {
+    "name": "clipped-lines",
+    "rows": ["•         ", "·•······  ", "  •       ", "          "],
+    "styles": []
+  },
+  {
+    "name": "antialiased-line",
+    "rows": ["···  ", "···  ", "     "],
+    "styles": [
+      {"x": 0, "y": 0, "fg": [64, 64, 64], "bg": [0, 0, 0], "bold": false},
+      {"x": 1, "y": 0, "fg": [128, 128, 128], "bg": [0, 0, 0], "bold": false},
+      {"x": 2, "y": 0, "fg": [64, 64, 64], "bg": [0, 0, 0], "bold": false},
+      {"x": 0, "y": 1, "fg": [64, 64, 64], "bg": [0, 0, 0], "bold": false},
+      {"x": 1, "y": 1, "fg": [128, 128, 128], "bg": [0, 0, 0], "bold": false},
+      {"x": 2, "y": 1, "fg": [64, 64, 64], "bg": [0, 0, 0], "bold": false}
+    ]
+  }
+]

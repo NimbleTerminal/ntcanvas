@@ -1,0 +1,58 @@
+// Package parity defines deterministic public-API scenarios shared by the
+// upstream fixture generator and ntcanvas's independent regression tests.
+package parity
+
+import (
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+	"encoding/json"
+	canvas "nimbleterminal.dev/ntcanvas"
+)
+
+func Snapshot() ([]byte, error) {
+	out := map[string]any{}
+	origin := canvas.Point{X: 4, Y: 8}
+	out["coordinates"] = []any{
+		canvas.NewFloat64PointFromPoint(canvas.Point{X: -3, Y: 5}),
+		canvas.NewPointFromFloat64Point(canvas.Float64Point{X: -1.5, Y: 2.5}),
+		canvas.CanvasYCoordinates(8, []int{-2, 0, 3}),
+		canvas.CanvasPoints(origin, []canvas.Point{{X: -2, Y: 1}, {X: 3, Y: -4}}),
+		canvas.CanvasPointFromFloat64Point(origin, canvas.Float64Point{X: -1.5, Y: 2.5}),
+		canvas.CanvasFloat64Point(origin, canvas.Float64Point{X: 1.25, Y: -2.5}),
+	}
+	style := lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Background(lipgloss.Color("4")).Bold(true)
+	m := canvas.New(4, 3, canvas.WithStyle(style))
+	m.SetCell(canvas.Point{}, canvas.NewCellWithStyle('A', style))
+	m.SetRunes(canvas.Point{X: 1}, []rune{'B', 'C', 'D', 'E'})
+	m.SetStringWithStyle(canvas.Point{X: -1, Y: 1}, "012345", lipgloss.NewStyle().Underline(true))
+	m.SetRuneWithStyle(canvas.Point{X: 2, Y: 2}, '!', style)
+	m.SetCellStyle(canvas.Point{X: 3, Y: 2}, style)
+	out["styled_cells"] = m.View()
+	out["clipped_returns"] = []bool{m.SetCell(canvas.Point{X: 4}, canvas.NewCell('x')), m.SetCellStyle(canvas.Point{Y: -1}, style), m.SetString(canvas.Point{X: 9}, "x"), m.SetString(canvas.Point{Y: 3}, "x")}
+	out["style_lookup"] = []any{m.GetCellStyle(canvas.Point{X: -1}) == nil, m.GetCellStyle(canvas.Point{}).Render("A")}
+	m.FillLine(1, canvas.NewCell('z'))
+	m.FillLine(-1, canvas.NewCell('x'))
+	out["fill_line"] = m.View()
+	m.Resize(3, 4)
+	out["resize"] = m.View()
+	m.ShiftDown()
+	m.ShiftRight()
+	out["shift_down_right"] = m.View()
+	m.ShiftUp()
+	m.ShiftLeft()
+	out["shift_up_left"] = m.View()
+	m.ViewWidth, m.ViewHeight = 2, 2
+	m.SetCursor(canvas.Point{X: 2, Y: 3})
+	out["edge_view"] = m.View()
+	m = canvas.New(4, 1)
+	m.SetString(canvas.Point{}, "界e\u0301xZ")
+	out["unicode"] = m.View()
+	m = canvas.New(8, 7, canvas.WithFocus(), canvas.WithViewWidth(3), canvas.WithViewHeight(2))
+	positions := []canvas.Point{}
+	for _, msg := range []tea.Msg{tea.KeyPressMsg{Code: tea.KeyRight}, tea.KeyPressMsg{Code: 'j', Text: "j"}, tea.KeyPressMsg{Code: tea.KeyPgDown}, tea.MouseWheelMsg{Button: tea.MouseWheelLeft}, tea.MouseWheelMsg{Button: tea.MouseWheelUp}, tea.KeyPressMsg{Code: tea.KeyPgUp}, tea.KeyPressMsg{Code: 'h', Text: "h"}} {
+		m, _ = m.Update(msg)
+		positions = append(positions, m.Cursor())
+	}
+	out["input_positions"] = positions
+	return json.MarshalIndent(out, "", "  ")
+}

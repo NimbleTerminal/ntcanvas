@@ -1,0 +1,176 @@
+// ntcharts - Copyright (c) 2024 Neomantra Corp.
+
+// Package ntcanvas provides terminal-cell surfaces and a Bubble Tea viewport.
+package ntcanvas
+
+import (
+	tea "charm.land/bubbletea/v2"
+	zone "github.com/lrstanley/bubblezone/v2"
+	"image"
+)
+
+// Surface renders a rectangle in cell coordinates. Render must clip to Bounds,
+// return empty output for empty intersections, and omit a trailing newline.
+// Rendering does not consume input or write directly to a terminal.
+// Bounds must have nonnegative dimensions representable by int.
+type Surface interface {
+	// Bounds returns the surface extent in terminal-cell coordinates.
+	Bounds() image.Rectangle
+	// Render returns the content in the intersection of its argument and Bounds.
+	Render(image.Rectangle) string
+}
+
+// Model displays a Surface. Copies share the surface and key map, but viewport, focus and
+// built-in drag state are copied by value. Custom callbacks may share captures.
+// Grid allocation/resizing belongs to the concrete surface, not this model.
+type Model struct {
+	surface Surface
+	// KeyMap controls keyboard input. Nil disables keys but not mouse handling.
+	KeyMap *KeyMap
+	// UpdateHandler processes messages when focused. Nil disables input handling.
+	UpdateHandler UpdateHandler
+	// ViewWidth and ViewHeight bound the visible region; nonpositive values hide it.
+	ViewWidth, ViewHeight int
+	cursor                Point
+	focus                 bool
+	zoneManager           *zone.Manager
+	zoneID                string
+	lastMouse             Point
+	dragging              bool
+}
+
+// NewModel wraps a surface. nil means an empty surface; typed nil pointers are
+// not valid surfaces. Options execute in order. Retain the result of Update.
+func NewModel(surface Surface, opts ...ModelOption) Model {
+	keys := DefaultKeyMap()
+	m := Model{surface: surface, KeyMap: &keys, UpdateHandler: DefaultUpdateHandler()}
+	b := m.Bounds()
+	m.cursor = b.Min
+	m.ViewWidth = b.Dx()
+	m.ViewHeight = b.Dy()
+	for _, opt := range opts {
+		opt(&m)
+	}
+	return m
+}
+
+// Surface returns the wrapped surface, which may be nil.
+func (m Model) Surface() Surface { return m.surface }
+
+// Bounds returns the surface bounds, or an empty rectangle for a nil surface.
+func (m Model) Bounds() image.Rectangle {
+	if m.surface == nil {
+		return image.Rectangle{}
+	}
+	return m.surface.Bounds()
+}
+
+// Width returns the surface width, independent of the viewport width.
+func (m Model) Width() int { return m.Bounds().Dx() }
+
+// Height returns the surface height, independent of the viewport height.
+func (m Model) Height() int { return m.Bounds().Dy() }
+
+// Cursor returns the viewport origin clamped to the current surface bounds.
+// For an empty surface it returns Bounds().Min.
+func (m Model) Cursor() Point { return m.clampCursor(m.cursor) }
+func (m Model) clampCursor(p Point) Point {
+	b := m.Bounds()
+	if b.Empty() {
+		return b.Min
+	}
+	return Point{X: min(max(p.X, b.Min.X), b.Max.X-1), Y: min(max(p.Y, b.Min.Y), b.Max.Y-1)}
+}
+
+// SetCursor clamps to the last cell, allowing a partial viewport at an edge.
+// Move methods instead stop at the last full viewport for interactive panning.
+func (m *Model) SetCursor(p Point) { m.cursor = m.clampCursor(p) }
+
+// Viewport returns the visible region, including after external grid resizing.
+func (m Model) Viewport() image.Rectangle {
+	b := m.Bounds()
+	if b.Empty() || m.ViewWidth <= 0 || m.ViewHeight <= 0 {
+		return image.Rectangle{}
+	}
+	p := m.Cursor()
+	return image.Rectangle{Min: p, Max: Point{X: p.X + min(m.ViewWidth, b.Max.X-p.X), Y: p.Y + min(m.ViewHeight, b.Max.Y-p.Y)}}
+}
+
+// SetViewport clips a requested region to the surface. Window resizing never
+// resizes the underlying surface automatically.
+func (m *Model) SetViewport(r image.Rectangle) {
+	b := m.Bounds()
+	r = r.Intersect(b)
+	m.cursor = r.Min
+	if r.Empty() {
+		m.cursor = b.Min
+	}
+	m.ViewWidth = r.Dx()
+	m.ViewHeight = r.Dy()
+}
+
+// View renders the clipped viewport without a trailing newline. When a zone
+// manager is set, it wraps the output in zone markers for the host to scan.
+func (m Model) View() string {
+	var s string
+	if r := m.Viewport(); m.surface != nil && !r.Empty() {
+		s = m.surface.Render(r)
+	}
+	if m.zoneManager != nil {
+		s = m.zoneManager.Mark(m.zoneID, s)
+	}
+	return s
+}
+
+// SetZoneManager installs a manager for mouse dragging and clears drag state.
+// The host must scan View output with the manager. Passing nil disables zones.
+func (m *Model) SetZoneManager(zm *zone.Manager) {
+	m.dragging = false
+	m.zoneManager = zm
+	if (zm != nil) && (m.zoneID == "") {
+		m.zoneID = zm.NewPrefix()
+	}
+}
+
+// ZoneManager returns the installed mouse zone manager, or nil if disabled.
+func (m Model) ZoneManager() *zone.Manager {
+	return m.zoneManager
+}
+
+// ZoneID returns the model's zone identifier, allocated when a nonnil zone
+// manager is first installed. Disabling the manager retains the identifier.
+func (m Model) ZoneID() string {
+	return m.zoneID
+}
+
+// Focused reports whether input processing is enabled.
+func (m Model) Focused() bool {
+	return m.focus
+}
+
+// Focus enables input handling by Update.
+func (m *Model) Focus() {
+	m.focus = true
+}
+
+// Blur disables input handling and cancels any active drag.
+func (m *Model) Blur() {
+	m.focus = false
+	m.dragging = false
+}
+
+// Init implements Bubble Tea initialization and returns no command.
+func (m Model) Init() tea.Cmd {
+	return nil
+}
+
+// Update invokes UpdateHandler on a copy when focused and the handler is nonnil.
+// Retain the returned model; viewport and drag changes do not modify the receiver.
+// The returned command is always nil.
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+	if !m.focus || m.UpdateHandler == nil {
+		return m, nil
+	}
+	m.UpdateHandler(&m, msg)
+	return m, nil
+}

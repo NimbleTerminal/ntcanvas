@@ -1,0 +1,82 @@
+{
+  "clipped_returns": [
+    false,
+    false,
+    true,
+    false
+  ],
+  "coordinates": [
+    {
+      "X": -3,
+      "Y": 5
+    },
+    {
+      "X": -2,
+      "Y": 3
+    },
+    [
+      10,
+      8,
+      5
+    ],
+    [
+      {
+        "X": 2,
+        "Y": 7
+      },
+      {
+        "X": 7,
+        "Y": 12
+      }
+    ],
+    {
+      "X": 2,
+      "Y": 5
+    },
+    {
+      "X": 5.25,
+      "Y": 10.5
+    }
+  ],
+  "edge_view": " \n",
+  "fill_line": "\u001b[1;31;44mA\u001b[m\u001b[1;31;44mB\u001b[m\u001b[1;31;44mC\u001b[m\u001b[1;31;44mD\u001b[m\nzzzz\n  \u001b[1;31;44m!\u001b[m\u001b[1;31;44m \u001b[m",
+  "input_positions": [
+    {
+      "X": 1,
+      "Y": 0
+    },
+    {
+      "X": 1,
+      "Y": 1
+    },
+    {
+      "X": 1,
+      "Y": 2
+    },
+    {
+      "X": 0,
+      "Y": 2
+    },
+    {
+      "X": 0,
+      "Y": 1
+    },
+    {
+      "X": 0,
+      "Y": 0
+    },
+    {
+      "X": 0,
+      "Y": 0
+    }
+  ],
+  "resize": "\u001b[1;31;44mA\u001b[m\u001b[1;31;44mB\u001b[m\u001b[1;31;44mC\u001b[m\nzzz\n  \u001b[1;31;44m!\u001b[m",
+  "shift_down_right": "   \n \u001b[1;31;44mA\u001b[m\u001b[1;31;44mB\u001b[m\n zz",
+  "shift_up_left": "\u001b[1;31;44mA\u001b[m\u001b[1;31;44mB\u001b[m \nzz \n   ",
+  "style_lookup": [
+    true,
+    "\u001b[1;31;44mA\u001b[m"
+  ],
+  "styled_cells": "\u001b[1;31;44mA\u001b[m\u001b[1;31;44mB\u001b[m\u001b[1;31;44mC\u001b[m\u001b[1;31;44mD\u001b[m\n\u001b[4;4m1\u001b[m\u001b[4;4m2\u001b[m\u001b[4;4m3\u001b[m\u001b[4;4m4\u001b[m\n  \u001b[1;31;44m!\u001b[m\u001b[1;31;44m \u001b[m",
+  "unicode": "界éx"
+}
