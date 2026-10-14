@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ignore key releases in the logo example, document shared mouse-zone IDs in
+  model copies, and avoid reallocating grids when dimensions are unchanged.
 - Complete public API documentation and correct PgUp/PgDown help labels.
 - Test the minimum supported Go version and clarify development requirements.
 

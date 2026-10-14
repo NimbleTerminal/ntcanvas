@@ -26,12 +26,21 @@ func TestHelpAndInput(t *testing.T) {
 	}
 	next, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	m = next.(model)
+	next, cmd := m.Update(tea.KeyReleaseMsg{Code: tea.KeyEnter})
+	m = next.(model)
+	if cmd != nil || m.c1.Focused() || !m.c2.Focused() {
+		t.Fatal("Enter release changed focus")
+	}
+	_, cmd = m.Update(tea.KeyReleaseMsg{Code: 'q', Text: "q"})
+	if cmd != nil {
+		t.Fatal("quit release returned a command")
+	}
 	next, _ = m.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
 	m = next.(model)
 	if m.c1.Focused() || !m.c2.Focused() || m.c2.Cursor().Y != 1 {
 		t.Fatal("focus switch/wheel")
 	}
-	_, cmd := m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"})
+	_, cmd = m.Update(tea.KeyPressMsg{Code: 'q', Text: "q"})
 	if cmd == nil {
 		t.Fatal("quit")
 	}

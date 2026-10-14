@@ -22,6 +22,8 @@ type Surface interface {
 
 // Model displays a Surface. Copies share the surface and key map, but viewport, focus and
 // built-in drag state are copied by value. Custom callbacks may share captures.
+// Copies also share an installed zone manager and zone ID. Use separate NewModel
+// calls for independently rendered mouse zones, even when sharing one surface.
 // Grid allocation/resizing belongs to the concrete surface, not this model.
 type Model struct {
 	surface Surface

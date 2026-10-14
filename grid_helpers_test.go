@@ -1,11 +1,56 @@
 package ntcanvas
 
 import (
+	"fmt"
 	"image"
 	"testing"
 
 	"charm.land/lipgloss/v2"
 )
+
+func TestUnchangedResizeDoesNotAllocate(t *testing.T) {
+	type grid interface {
+		Surface
+		Resize(int, int)
+		ResizeChecked(int, int, SizeLimits) error
+		SetText(Point, string) bool
+	}
+	for _, size := range []Point{{}, {X: 3}, {Y: 3}, {X: 80, Y: 24}} {
+		for _, g := range []grid{
+			NewRuneGrid(size.X, size.Y),
+			NewStyledRuneGrid(size.X, size.Y),
+			NewGraphemeGrid(size.X, size.Y),
+		} {
+			t.Run(fmt.Sprintf("%T/%dx%d", g, size.X, size.Y), func(t *testing.T) {
+				g.SetText(Point{}, "A界e\u0301")
+				before := g.Render(g.Bounds())
+				var err error
+				allocs := testing.AllocsPerRun(10, func() {
+					g.Resize(size.X, size.Y)
+					err = g.ResizeChecked(size.X, size.Y, SizeLimits{})
+				})
+				if err != nil || allocs != 0 {
+					t.Fatalf("unchanged resize: err=%v allocations=%g", err, allocs)
+				}
+				if g.Bounds() != image.Rect(0, 0, size.X, size.Y) || g.Render(g.Bounds()) != before {
+					t.Fatal("unchanged resize altered bounds or content")
+				}
+				// Checked calls must not bypass validation just because sizes match.
+				if err := g.ResizeChecked(size.X, size.Y, SizeLimits{MaxWidth: -1}); err != ErrInvalidSize {
+					t.Fatal("invalid limits accepted", err)
+				}
+				if size.X > 1 {
+					if err := g.ResizeChecked(size.X, size.Y, SizeLimits{MaxWidth: 1}); err != ErrSizeLimit {
+						t.Fatal("stricter limit accepted", err)
+					}
+				}
+				if g.Render(g.Bounds()) != before {
+					t.Fatal("rejected resize altered content")
+				}
+			})
+		}
+	}
+}
 
 func TestRenderAllocationBudgets(t *testing.T) {
 	styled := NewStyledRuneGrid(40, 12)

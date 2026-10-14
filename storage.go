@@ -15,6 +15,9 @@ func (s *storage[T]) resize(w, h int) {
 	if !validAllocation(w, h) {
 		panic(ErrInvalidSize)
 	}
+	if w == s.area.Dx() && h == s.area.Dy() {
+		return
+	}
 	rows := make([][]T, h)
 	for y := range rows {
 		rows[y] = make([]T, w)

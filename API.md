@@ -38,6 +38,9 @@ pointer receivers. Retain the model returned by `Update`.
 
 Model copies share the surface and `*KeyMap`, but copy viewport, focus, and
 built-in drag state. Constructors allocate separate default key maps.
+Copies also share the installed zone manager and zone ID. To render independent
+mouse zones, construct separate models with `NewModel` rather than copying an
+already zoned model; those models can still share the same surface and manager.
 `WithKeyMap(value)` installs a separate shallow copy per model; binding key-name
 slices retain their existing aliasing. To detach a copied model's bindings, copy
 `*model.KeyMap` and assign a pointer to that copy. A nil KeyMap disables keyboard
@@ -254,6 +257,8 @@ Each grid has a `New…Checked(w, h, SizeLimits)` constructor and `ResizeChecked
 The styled constructor also accepts grid options. Invalid requests return errors;
 a rejected resize leaves the grid unchanged. `ValidateSize` uses a conservative
 allocation-overflow check sufficient for all three cell types.
+Resizing to the current dimensions preserves storage without allocating or copying
+cells. `ResizeChecked` still validates the requested limits before this no-op.
 
 Zero limit fields default to width/height 4096 and 65536 cells. Limits apply per
 call to one grid, not total process memory or retained text/style data. Resizing
