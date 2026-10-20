@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Update example dependencies to go-booba v0.10.3 and the browser-only Bubble
+  Tea fork to its latest WASM revision, including browser clipboard, mouse-wheel,
+  and GPU color-emoji fixes. Refresh pinned Go lint and vulnerability tools.
+
 ## 0.1.1 — 2026-10-19
 
 - Ignore key releases in the logo example, document shared mouse-zone IDs in

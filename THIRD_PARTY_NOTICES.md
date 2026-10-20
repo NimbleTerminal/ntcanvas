@@ -115,7 +115,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## github.com/NimbleMarkets/go-booba v0.9.2
+## github.com/NimbleMarkets/go-booba v0.10.3
 
 ```
 MIT License
@@ -447,7 +447,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## github.com/neomantra/bubbletea/v2 v2.0.0-20261009201241-c397c32a5074
+## github.com/neomantra/bubbletea/v2 v2.0.0-20261020122444-536722b0bdb6
 
 ```
 MIT License
