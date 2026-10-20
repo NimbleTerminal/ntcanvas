@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.1 — 2026-10-19
+
 - Ignore key releases in the logo example, document shared mouse-zone IDs in
   model copies, and avoid reallocating grids when dimensions are unchanged.
 - Complete public API documentation and correct PgUp/PgDown help labels.
