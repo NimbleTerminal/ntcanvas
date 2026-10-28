@@ -2,9 +2,12 @@
 
 ## Unreleased
 
-- Update example dependencies to go-booba v0.10.3 and the browser-only Bubble
+- Update example dependencies to go-booba v0.10.5 and the browser-only Bubble
   Tea fork to its latest WASM revision, including browser clipboard, mouse-wheel,
-  and GPU color-emoji fixes. Refresh pinned Go lint and vulnerability tools.
+  and GPU color-emoji fixes.
+- Refresh native and example dependencies to Bubble Tea v2.1.1 and the latest
+  Ultraviolet revision. Update development and CI to Go 1.27.3, validate with
+  Node 26.12.1, and refresh pinned Go lint and vulnerability tools.
 
 ## 0.1.1 — 2026-10-19
 

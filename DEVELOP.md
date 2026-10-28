@@ -1,17 +1,17 @@
 # Development
 
-Use Go 1.27.2, [Go Task](https://taskfile.dev), Node 26, and a C compiler for
+Use Go 1.27.3, [Go Task](https://taskfile.dev), Node 26, and a C compiler for
 race tests. Python 3 is needed to serve the demo.
 Vulnerability scans and first-time tool installation require network access.
 The Taskfile installs pinned golangci-lint into the ignored `.task/bin` directory.
 
 Go 1.26.8 is the supported minimum. CI tests native and WASM builds with both
-1.26.8 and 1.27.2, with automatic toolchain upgrades disabled; the full tooling
-and site checks run on 1.27.2.
+1.26.8 and 1.27.3, with automatic toolchain upgrades disabled; the full tooling
+and site checks run on 1.27.3.
 
 Node 26 is an intentional choice for the browser/WASM development tools: this
 project tests against the current Node release line rather than waiting for LTS.
-The local CI suite has been validated with Node 26.11.1. Node is not a dependency
+The local CI suite has been validated with Node 26.12.1. Node is not a dependency
 of native library users.
 
 ## Commands

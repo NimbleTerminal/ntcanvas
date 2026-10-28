@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        go: ['1.26.8', '1.27.2']
+        go: ['1.26.8', '1.27.3']
     runs-on: ${{ matrix.os }}
     env:
       # Do not silently upgrade the compiler when testing the minimum version.
@@ -46,5 +46,5 @@ jobs:
           task build
           task test-wasm
       - name: Run full CI
-        if: matrix.go == '1.27.2'
+        if: matrix.go == '1.27.3'
         run: task ci

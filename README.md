@@ -87,7 +87,7 @@ Examples have a separate module; browser dependencies stay outside the library.
 
 ## Contributing
 
-Use Go 1.27.2, [Go Task](https://taskfile.dev), Node 26, and a C compiler for race
+Use Go 1.27.3, [Go Task](https://taskfile.dev), Node 26, and a C compiler for race
 tests. Run `task ci` for native/WASM tests, vet, builds, upstream output fixtures,
 browser bridge checks, license notices, and vulnerability scans. See
 [DEVELOP.md](DEVELOP.md) for setup and manual browser checks.
