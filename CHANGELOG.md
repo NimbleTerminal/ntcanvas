@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.2 — 2026-10-28
+
 - Update example dependencies to go-booba v0.10.5 and the browser-only Bubble
   Tea fork to its latest WASM revision, including browser clipboard, mouse-wheel,
   and GPU color-emoji fixes.
