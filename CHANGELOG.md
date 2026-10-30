@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.3 — 2026-10-30
+
+- Update the examples to go-booba v0.10.7 for browser terminal box-drawing
+  continuity, improved font defaults, and Safari WebTransport connection fixes.
+
 ## 0.1.2 — 2026-10-28
 
 - Update example dependencies to go-booba v0.10.5 and the browser-only Bubble
