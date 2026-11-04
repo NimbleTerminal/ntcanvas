@@ -25,5 +25,5 @@ changes each view window; g explicitly resizes the grid. Both Models see shared
 edits immediately. Their cursors remain independent and clamp to storage bounds.
 Clicking outside both views blurs them; Enter or a click restores focus.
 
-The examples module owns go-booba. Only browser builds select `wasm.work` and its
+The examples module owns `nimbleterminal.dev/booba`. Only browser builds select `wasm.work` and its
 Bubble Tea replacement. No demo dependencies are added to ntcanvas's root module.

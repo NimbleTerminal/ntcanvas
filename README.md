@@ -103,7 +103,7 @@ Contributions and feedback are welcome. Please follow our
 Extracted from [NTCharts](https://github.com/NimbleMarkets/ntcharts).
 Thanks to [Charm](https://charm.sh/) for Bubble Tea and Lip Gloss,
 [bubblezone](https://github.com/lrstanley/bubblezone) for mouse zones, and
-[go-booba](https://github.com/NimbleMarkets/go-booba) for the browser runtime.
+[booba](https://github.com/NimbleTerminal/booba) for the browser runtime.
 Repository and site conventions follow ntpicture.
 
 ## License

@@ -2,8 +2,8 @@ package main
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/NimbleMarkets/go-booba/actions/bubblehelp"
 	zone "github.com/lrstanley/bubblezone/v2"
+	"nimbleterminal.dev/booba/actions/bubblehelp"
 	"nimbleterminal.dev/ntcanvas"
 	"testing"
 	"time"

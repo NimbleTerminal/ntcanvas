@@ -2,11 +2,11 @@
 // not escape-sequence spelling. No DOM, browser painting, or PTY is involved.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { Ghostty, CellFlags } from '../web/ghostty-web/ghostty-web.js';
+import { Ghostty, CellFlags } from '../web/ntwebterm/ntwebterm.js';
 
 const frames = JSON.parse(await readFile('dist/screen-frames.json', 'utf8'));
 const expected = JSON.parse(await readFile('testdata/screen/frames.json', 'utf8'));
-const bytes = await readFile('web/ghostty-web/ghostty-vt.wasm');
+const bytes = await readFile('web/ntwebterm/ghostty-vt.wasm');
 const { instance } = await WebAssembly.instantiate(bytes, { env: { log() {} } });
 const ghostty = new Ghostty(instance);
 assert.equal(frames.length, expected.length);

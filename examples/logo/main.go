@@ -161,7 +161,7 @@ func main() {
 
 	// booba.Run is a tea.Program substitute that dispatches to native Bubble Tea
 	// or the WASM/ghostty-web bridge depending on build target.
-	// See https://github.com/NimbleMarkets/go-booba-example.
+	// See https://github.com/NimbleTerminal/booba.
 	if err := runDemo(m); err != nil {
 		fmt.Println("Error running program:", err)
 		os.Exit(1)

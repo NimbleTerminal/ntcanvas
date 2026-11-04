@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.4 — 2026-11-04
+
+- Migrate the examples and browser runtime to `nimbleterminal.dev/booba` v0.12.1
+  and update booba web links to `github.com/NimbleTerminal/booba`.
+
 ## 0.1.3 — 2026-10-30
 
 - Update the examples to go-booba v0.10.7 for browser terminal box-drawing
