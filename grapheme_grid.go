@@ -256,6 +256,8 @@ func (g *GraphemeGrid) CopyRect(dst Point, src *GraphemeGrid, r image.Rectangle)
 }
 
 // Render emits blanks for any cluster bisected by the requested rectangle.
+// Standalone marks that join through ZWNJ render as U+FFFD per stored column;
+// their stored text is unchanged.
 func (g *GraphemeGrid) Render(r image.Rectangle) string {
 	r = r.Intersect(g.area)
 	if r.Empty() {
@@ -275,6 +277,9 @@ func (g *GraphemeGrid) Render(r image.Rectangle) string {
 			}
 			if text == "" {
 				text = " "
+			}
+			if attachesAfterBoundary(text) {
+				text = strings.Repeat(string(utf8.RuneError), width)
 			}
 			// Independently written regional indicators or trailing joiners can merge
 			// when concatenated. ZWNJ preserves the explicit cell boundary without a

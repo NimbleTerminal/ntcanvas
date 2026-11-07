@@ -71,7 +71,7 @@ func singleColumnRune(r rune) rune {
 	if r >= ' ' && r <= '~' {
 		return r
 	}
-	if ansi.StringWidth(string(r)) != 1 {
+	if ansi.StringWidth(string(r)) != 1 || attachesAfterBoundary(string(r)) {
 		return utf8.RuneError
 	}
 	return r
@@ -85,4 +85,13 @@ func needsGraphemeBoundary(previous, text string) bool {
 	}
 	cluster, _ := ansi.FirstGraphemeCluster(previous+text, ansi.GraphemeWidth)
 	return len(cluster) > len(previous)
+}
+
+// attachesAfterBoundary identifies leading marks that absorb a cell even with
+// our ZWNJ separator. Their standalone width is not safe when concatenated.
+func attachesAfterBoundary(text string) bool {
+	if len(text) == 1 {
+		return false
+	}
+	return needsGraphemeBoundary(" \u200c", text)
 }

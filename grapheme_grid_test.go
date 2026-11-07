@@ -132,7 +132,7 @@ func TestGraphemeCopy(t *testing.T) {
 	}
 }
 func FuzzGraphemeMutations(f *testing.F) {
-	for _, s := range []string{"界語x", "e\u0301👩‍💻", "\x1b[2J", "🇺🇸", "a" + strings.Repeat("\u0301", 17)} {
+	for _, s := range []string{"\u17c70", "\u1a55", "\u1929", "\U000114bb", "界語x", "e\u0301👩‍💻", "\x1b[2J", "🇺🇸", "a" + strings.Repeat("\u0301", 17)} {
 		f.Add(s, uint8(1), uint8(4))
 	}
 	f.Fuzz(func(t *testing.T, s string, a, b uint8) {
@@ -169,5 +169,34 @@ func TestIndependentClustersDoNotMergeOnRender(t *testing.T) {
 			t.Fatal("missing cluster boundary")
 		}
 		assertClusters(t, g)
+	}
+}
+
+// These positive-width standalone marks still attach after a ZWNJ separator.
+func TestStandaloneSpacingMarks(t *testing.T) {
+	for _, input := range []string{"\u17c7", "\u1a55", "\u1929", "\U000114bb", "\u1a57", "\u1ad1", "\u0ac0", "\u1a71", "\u1a6e"} {
+		t.Run(input, func(t *testing.T) {
+			g := NewGraphemeGrid(8, 2)
+			r := NewRuneGrid(8, 2)
+			s := NewStyledRuneGrid(8, 2)
+			r.SingleColumn, s.SingleColumn = true, true
+			for y := range 2 {
+				g.SetText(Point{X: 1, Y: y}, input)
+				r.SetText(Point{X: 1, Y: y}, input)
+				s.SetText(Point{X: 1, Y: y}, input)
+			}
+			for _, grid := range []Surface{g, r, s} {
+				for _, rect := range []image.Rectangle{grid.Bounds(), image.Rect(1, 0, 3, 2)} {
+					for _, row := range strings.Split(grid.Render(rect), "\n") {
+						if width := ansi.StringWidth(row); width != rect.Dx() {
+							t.Fatalf("%T %q: width %d, want %d", grid, row, width, rect.Dx())
+						}
+					}
+				}
+			}
+			if g.Cell(Point{X: 1}).Text != input || r.Cell(Point{X: 1}).Rune != []rune(input)[0] || s.Cell(Point{X: 1}).Rune != []rune(input)[0] {
+				t.Fatal("render changed stored text")
+			}
+		})
 	}
 }

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fix rendered column loss for standalone Unicode marks that attach through
+  ZWNJ. Grapheme grids and single-column rune grids render these as replacement
+  characters while preserving stored text.
+
 ## 0.1.4 — 2026-11-04
 
 - Migrate the examples and browser runtime to `nimbleterminal.dev/booba` v0.12.1

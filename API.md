@@ -178,7 +178,11 @@ Wide-character rules:
 
 Separately written clusters can otherwise merge when rendered—for example two
 regional indicators becoming one flag. The renderer inserts ZWNJ only at such
-boundaries to retain their separate columns. Stored text remains unchanged.
+boundaries to retain their separate columns. Standalone marks that still attach
+after ZWNJ render as one U+FFFD per stored column, including at the left edge
+of a rendered region. Single-column rune rendering uses the same fallback.
+Combining marks attached to a base within a cluster remain intact. Stored text
+remains unchanged.
 This depends on the terminal treating U+200C as zero-width. The Ghostty screen
 fixtures verify that behavior there; the library cannot detect a terminal that
 renders ZWNJ visibly or assigns it a column.
