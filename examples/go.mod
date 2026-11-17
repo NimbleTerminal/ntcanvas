@@ -8,7 +8,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/x/ansi v0.11.9
 	github.com/lrstanley/bubblezone/v2 v2.0.0
-	nimbleterminal.dev/booba v0.12.1
+	nimbleterminal.dev/booba v0.13.0
 	nimbleterminal.dev/ntcanvas v0.0.0
 )
 
