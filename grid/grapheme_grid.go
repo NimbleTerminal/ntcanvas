@@ -1,4 +1,4 @@
-package ntcanvas
+package ntcanvasgrid
 
 import (
 	"image"
@@ -6,6 +6,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
+	"nimbleterminal.dev/ntcanvas/internal/cellstore"
 )
 
 // MaxGraphemeRunes bounds stored and rendered cluster complexity. Longer clusters
@@ -42,7 +43,7 @@ type GraphemeCell struct {
 // Mutations never leave orphan continuations. Do not copy grid values or mutate
 // from multiple goroutines. Stored cluster strings are owned by this grid.
 type GraphemeGrid struct {
-	storage[GraphemeCell]
+	cells cellstore.Storage[GraphemeCell]
 	// Style is the default style for future writes, not existing cells.
 	Style CellStyle
 }
@@ -61,16 +62,16 @@ func NewGraphemeGridChecked(w, h int, l SizeLimits) (*GraphemeGrid, error) {
 }
 
 // Bounds returns the grid rectangle, with its origin at (0, 0).
-func (g *GraphemeGrid) Bounds() image.Rectangle { return g.area }
+func (g *GraphemeGrid) Bounds() image.Rectangle { return g.cells.Area }
 
 // Resize preserves overlapping cells and clears any wide cluster cut by the
 // new right edge. Negative dimensions clamp to zero; impossible allocation
 // arithmetic panics with ErrInvalidSize.
 func (g *GraphemeGrid) Resize(w, h int) {
-	g.resize(w, h)
+	g.cells.Resize(w, h)
 	// A width-2 lead truncated at the right boundary becomes an empty cell.
-	if w = g.area.Dx(); w > 0 {
-		for _, row := range g.content {
+	if w = g.cells.Area.Dx(); w > 0 {
+		for _, row := range g.cells.Content {
 			if row[w-1].Width == 2 {
 				row[w-1] = GraphemeCell{}
 			}
@@ -90,15 +91,15 @@ func (g *GraphemeGrid) ResizeChecked(w, h int, l SizeLimits) error {
 
 // Clear resets every cell to empty content and a zero style, preserving dimensions
 // and the default Style used for future writes.
-func (g *GraphemeGrid) Clear() { g.clear() }
+func (g *GraphemeGrid) Clear() { g.cells.Clear() }
 
 // Cell returns a read-only snapshot at p, or a zero value outside Bounds.
 // Empty in-bounds cells have Width 1; continuations have Width 0.
 func (g *GraphemeGrid) Cell(p Point) GraphemeCell {
-	if !p.In(g.area) {
+	if !p.In(g.cells.Area) {
 		return GraphemeCell{}
 	}
-	c := g.content[p.Y][p.X]
+	c := g.cells.Content[p.Y][p.X]
 	if c.Text == "" && !c.Continuation {
 		c.Width = 1
 	}
@@ -112,14 +113,14 @@ func graphemeText(s string) string {
 		if r == '\u200d' || r == '\u200c' {
 			return r
 		}
-		return plainRune(r)
+		return cellstore.PlainRune(r)
 	}, s)
 }
 func (g *GraphemeGrid) erase(p Point) {
-	if !p.In(g.area) {
+	if !p.In(g.cells.Area) {
 		return
 	}
-	row := g.content[p.Y]
+	row := g.cells.Content[p.Y]
 	x := p.X
 	if row[x].Continuation {
 		x--
@@ -130,15 +131,15 @@ func (g *GraphemeGrid) erase(p Point) {
 	}
 }
 func (g *GraphemeGrid) put(p Point, text string, width int, style CellStyle) bool {
-	if !p.In(g.area) || width < 1 || width > 2 || width > g.area.Dx()-p.X {
+	if !p.In(g.cells.Area) || width < 1 || width > 2 || width > g.cells.Area.Dx()-p.X {
 		return false
 	}
 	for x := p.X; x < p.X+width; x++ {
 		g.erase(Point{X: x, Y: p.Y})
 	}
-	g.content[p.Y][p.X] = GraphemeCell{Text: strings.Clone(text), Style: style, Width: width}
+	g.cells.Content[p.Y][p.X] = GraphemeCell{Text: strings.Clone(text), Style: style, Width: width}
 	if width == 2 {
-		g.content[p.Y][p.X+1] = GraphemeCell{Style: style, Continuation: true}
+		g.cells.Content[p.Y][p.X+1] = GraphemeCell{Style: style, Continuation: true}
 	}
 	return true
 }
@@ -167,15 +168,15 @@ func (g *GraphemeGrid) SetText(p Point, text string) bool {
 // SetTextWithStyle is SetText with an explicit style. It returns false for an
 // invalid row and true even when the text is fully clipped.
 func (g *GraphemeGrid) SetTextWithStyle(p Point, text string, style CellStyle) bool {
-	if p.Y < 0 || p.Y >= g.area.Dy() {
+	if p.Y < 0 || p.Y >= g.cells.Area.Dy() {
 		return false
 	}
-	if p.X >= g.area.Dx() || (p.X < 0 && p.X <= -len(text)) {
+	if p.X >= g.cells.Area.Dx() || (p.X < 0 && p.X <= -len(text)) {
 		return true
 	}
 	text = graphemeText(text)
 	for len(text) > 0 {
-		if p.X >= g.area.Dx() {
+		if p.X >= g.cells.Area.Dx() {
 			break
 		}
 		cluster, width := ansi.FirstGraphemeCluster(text, ansi.GraphemeWidth)
@@ -188,7 +189,7 @@ func (g *GraphemeGrid) SetTextWithStyle(p Point, text string, style CellStyle) b
 			continue
 		}
 		g.put(p, cluster, width, style)
-		if p.X >= 0 && width >= g.area.Dx()-p.X {
+		if p.X >= 0 && width >= g.cells.Area.Dx()-p.X {
 			break
 		}
 		p.X += width
@@ -199,7 +200,7 @@ func (g *GraphemeGrid) SetTextWithStyle(p Point, text string, style CellStyle) b
 // ClearRect clears every cluster touched by r, including its other half just
 // outside r. This is necessary to preserve valid wide-character storage.
 func (g *GraphemeGrid) ClearRect(r image.Rectangle) {
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		for x := r.Min.X; x < r.Max.X; x++ {
 			g.erase(Point{X: x, Y: y})
@@ -210,16 +211,16 @@ func (g *GraphemeGrid) ClearRect(r image.Rectangle) {
 // SetStyleRect replaces styles on entire clusters touched by r, including a
 // cluster's other half outside r. Empty cells in r are styled as well.
 func (g *GraphemeGrid) SetStyleRect(r image.Rectangle, s CellStyle) {
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		for x := r.Min.X; x < r.Max.X; x++ {
 			lead := x
-			if g.content[y][x].Continuation {
+			if g.cells.Content[y][x].Continuation {
 				lead--
 			}
-			n := max(1, g.content[y][lead].Width)
+			n := max(1, g.cells.Content[y][lead].Width)
 			for i := lead; i < lead+n; i++ {
-				g.content[y][i].Style = s
+				g.cells.Content[y][i].Style = s
 			}
 		}
 	}
@@ -229,14 +230,14 @@ func (g *GraphemeGrid) SetStyleRect(r image.Rectangle, s CellStyle) {
 // boundary becomes blank cells. Overwriting any destination half clears its
 // entire old cluster, which may clear a cell just outside the destination area.
 func (g *GraphemeGrid) CopyRect(dst Point, src *GraphemeGrid, r image.Rectangle) {
-	sx, dx, w := copyAxis(dst.X, r.Min.X, r.Max.X, src.area.Dx(), g.area.Dx())
-	sy, dy, h := copyAxis(dst.Y, r.Min.Y, r.Max.Y, src.area.Dy(), g.area.Dy())
+	sx, dx, w := cellstore.CopyAxis(dst.X, r.Min.X, r.Max.X, src.cells.Area.Dx(), g.cells.Area.Dx())
+	sy, dy, h := cellstore.CopyAxis(dst.Y, r.Min.Y, r.Max.Y, src.cells.Area.Dy(), g.cells.Area.Dy())
 	if w == 0 || h == 0 {
 		return
 	}
 	cells := make([]GraphemeCell, w*h)
 	for y := 0; y < h; y++ {
-		copy(cells[y*w:(y+1)*w], src.content[sy+y][sx:sx+w])
+		copy(cells[y*w:(y+1)*w], src.cells.Content[sy+y][sx:sx+w])
 	}
 	g.ClearRect(image.Rect(dx, dy, dx+w, dy+h))
 	for y := 0; y < h; y++ {
@@ -247,7 +248,7 @@ func (g *GraphemeGrid) CopyRect(dst Point, src *GraphemeGrid, r image.Rectangle)
 				continue
 			}
 			if c.Text == "" {
-				g.content[p.Y][p.X] = GraphemeCell{Style: c.Style}
+				g.cells.Content[p.Y][p.X] = GraphemeCell{Style: c.Style}
 				continue
 			}
 			g.put(p, c.Text, c.Width, c.Style)
@@ -259,7 +260,7 @@ func (g *GraphemeGrid) CopyRect(dst Point, src *GraphemeGrid, r image.Rectangle)
 // Standalone marks that join through ZWNJ render as U+FFFD per stored column;
 // their stored text is unchanged.
 func (g *GraphemeGrid) Render(r image.Rectangle) string {
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	if r.Empty() {
 		return ""
 	}
@@ -270,7 +271,7 @@ func (g *GraphemeGrid) Render(r image.Rectangle) string {
 		}
 		previous := ""
 		for x := r.Min.X; x < r.Max.X; x++ {
-			c := g.content[y][x]
+			c := g.cells.Content[y][x]
 			text, style, width := c.Text, c.Style, max(1, c.Width)
 			if c.Continuation || c.Width == 2 && x+1 >= r.Max.X {
 				text, style, width = " ", CellStyle{}, 1
@@ -278,14 +279,14 @@ func (g *GraphemeGrid) Render(r image.Rectangle) string {
 			if text == "" {
 				text = " "
 			}
-			if attachesAfterBoundary(text) {
+			if cellstore.AttachesAfterBoundary(text) {
 				text = strings.Repeat(string(utf8.RuneError), width)
 			}
 			// Independently written regional indicators or trailing joiners can merge
 			// when concatenated. ZWNJ preserves the explicit cell boundary without a
 			// display column or terminal cursor command. SGR alone does not do this.
 			// Sanitized single-byte ASCII cells cannot merge.
-			if needsGraphemeBoundary(previous, text) {
+			if cellstore.NeedsGraphemeBoundary(previous, text) {
 				w.WriteRune('\u200c')
 			}
 			w.cell(text, style)
@@ -311,7 +312,7 @@ func (g *GraphemeGrid) FillRect(r image.Rectangle, text string, style CellStyle)
 	if width < 1 || width > 2 {
 		return false
 	}
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	g.ClearRect(r)
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		for x := r.Min.X; width <= r.Max.X-x; x += width {

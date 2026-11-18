@@ -53,6 +53,10 @@ Focused models support arrow keys, HJKL, and mouse-wheel panning.
 | `RuneGrid` | One rune per cell | Compact terminal attributes |
 | `GraphemeGrid` | Graphemes with display-width tracking | Compact terminal attributes |
 
+`RuneGrid` and `GraphemeGrid` are also available without Bubble Tea, Lip Gloss,
+or bubblezone, from `nimbleterminal.dev/ntcanvas/grid`; see the
+[API guide](API.md).
+
 All implement `Surface`: `Bounds()` and `Render(rect)`. `Model` accepts any
 surface and owns only viewport and interaction state. Write and resize through
 the grid. Models sharing a grid see its changes but keep independent viewports.

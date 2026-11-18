@@ -1,18 +1,18 @@
-package ntcanvas
+package ntcanvasgrid
 
 import "image"
 
 // Width returns the number of stored columns.
-func (g *RuneGrid) Width() int { return g.area.Dx() }
+func (g *RuneGrid) Width() int { return g.cells.Area.Dx() }
 
 // Height returns the number of stored rows.
-func (g *RuneGrid) Height() int { return g.area.Dy() }
+func (g *RuneGrid) Height() int { return g.cells.Area.Dy() }
 
 // Width returns the number of stored columns.
-func (g *GraphemeGrid) Width() int { return g.area.Dx() }
+func (g *GraphemeGrid) Width() int { return g.cells.Area.Dx() }
 
 // Height returns the number of stored rows.
-func (g *GraphemeGrid) Height() int { return g.area.Dy() }
+func (g *GraphemeGrid) Height() int { return g.cells.Area.Dy() }
 
 // Fill sets every cell to c, sanitizing nonzero control runes.
 // It leaves the default Style unchanged.
@@ -81,30 +81,30 @@ func (g *GraphemeGrid) SetLinesWithStyle(lines []string, style CellStyle) {
 }
 
 // ShiftUp moves stored cells up one row and clears the bottom row.
-func (g *RuneGrid) ShiftUp() { g.shiftUp() }
+func (g *RuneGrid) ShiftUp() { g.cells.ShiftUp() }
 
 // ShiftDown moves stored cells down one row and clears the top row.
-func (g *RuneGrid) ShiftDown() { g.shiftDown() }
+func (g *RuneGrid) ShiftDown() { g.cells.ShiftDown() }
 
 // ShiftLeft moves stored cells left one column and clears the right edge.
-func (g *RuneGrid) ShiftLeft() { g.shiftLeft() }
+func (g *RuneGrid) ShiftLeft() { g.cells.ShiftLeft() }
 
 // ShiftRight moves stored cells right one column and clears the left edge.
-func (g *RuneGrid) ShiftRight() { g.shiftRight() }
+func (g *RuneGrid) ShiftRight() { g.cells.ShiftRight() }
 
 // ShiftUp moves stored cells up one row and clears the bottom row.
-func (g *GraphemeGrid) ShiftUp() { g.shiftUp() }
+func (g *GraphemeGrid) ShiftUp() { g.cells.ShiftUp() }
 
 // ShiftDown moves stored cells down one row and clears the top row.
-func (g *GraphemeGrid) ShiftDown() { g.shiftDown() }
+func (g *GraphemeGrid) ShiftDown() { g.cells.ShiftDown() }
 
 // ShiftLeft moves one display column; a cluster cut at the left edge is cleared.
 func (g *GraphemeGrid) ShiftLeft() {
-	g.shiftLeft()
+	g.cells.ShiftLeft()
 	if g.Width() == 0 {
 		return
 	}
-	for _, row := range g.content {
+	for _, row := range g.cells.Content {
 		if row[0].Continuation {
 			row[0] = GraphemeCell{}
 		}
@@ -113,11 +113,11 @@ func (g *GraphemeGrid) ShiftLeft() {
 
 // ShiftRight moves one display column; a cluster cut at the right edge is cleared.
 func (g *GraphemeGrid) ShiftRight() {
-	g.shiftRight()
+	g.cells.ShiftRight()
 	if g.Width() == 0 {
 		return
 	}
-	for _, row := range g.content {
+	for _, row := range g.cells.Content {
 		if row[len(row)-1].Width == 2 {
 			row[len(row)-1] = GraphemeCell{}
 		}

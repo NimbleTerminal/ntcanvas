@@ -1,4 +1,4 @@
-package ntcanvas
+package ntcanvasgrid
 
 import "testing"
 

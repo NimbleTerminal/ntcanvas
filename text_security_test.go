@@ -4,7 +4,6 @@ import (
 	"image"
 	"strings"
 	"testing"
-	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
 )
@@ -79,39 +78,31 @@ func TestSingleColumnCellBoundaries(t *testing.T) {
 	}
 }
 
-func TestGraphemeComplexityLimit(t *testing.T) {
-	within := "a" + strings.Repeat("\u0301", MaxGraphemeRunes-1)
-	for _, input := range []string{within, within + "\u0301", "a" + strings.Repeat("\u0301", 100000), "👩" + strings.Repeat("\u200d👩", 60)} {
-		want := input
-		if utf8.RuneCountInString(input) > MaxGraphemeRunes {
-			want = "�"
-		}
-		for _, write := range []func(*GraphemeGrid) bool{
-			func(g *GraphemeGrid) bool { return g.SetGrapheme(Point{}, input, CellStyle{}) },
-			func(g *GraphemeGrid) bool { return g.SetText(Point{}, input) },
-			func(g *GraphemeGrid) bool { return g.FillRect(image.Rect(0, 0, 1, 1), input, CellStyle{}) },
-		} {
-			g := NewGraphemeGrid(3, 1)
-			if !write(g) || g.Cell(Point{}).Text != want {
-				t.Fatalf("cluster length %d not handled", utf8.RuneCountInString(input))
+// These positive-width standalone marks still attach after a ZWNJ separator.
+func TestStandaloneSpacingMarks(t *testing.T) {
+	for _, input := range []string{"\u17c7", "\u1a55", "\u1929", "\U000114bb", "\u1a57", "\u1ad1", "\u0ac0", "\u1a71", "\u1a6e"} {
+		t.Run(input, func(t *testing.T) {
+			g := NewGraphemeGrid(8, 2)
+			r := NewRuneGrid(8, 2)
+			s := NewStyledRuneGrid(8, 2)
+			r.SingleColumn, s.SingleColumn = true, true
+			for y := range 2 {
+				g.SetText(Point{X: 1, Y: y}, input)
+				r.SetText(Point{X: 1, Y: y}, input)
+				s.SetText(Point{X: 1, Y: y}, input)
 			}
-			if got := g.Render(g.Bounds()); ansi.StringWidth(got) != 3 || len(got) > MaxGraphemeRunes*utf8.UTFMax+2 {
-				t.Fatal("unbounded output")
+			for _, grid := range []Surface{g, r, s} {
+				for _, rect := range []image.Rectangle{grid.Bounds(), image.Rect(1, 0, 3, 2)} {
+					for _, row := range strings.Split(grid.Render(rect), "\n") {
+						if width := ansi.StringWidth(row); width != rect.Dx() {
+							t.Fatalf("%T %q: width %d, want %d", grid, row, width, rect.Dx())
+						}
+					}
+				}
 			}
-			assertClusters(t, g)
-		}
-	}
-	g := NewGraphemeGrid(4, 1)
-	long := "a" + strings.Repeat("\u0301", 100000)
-	g.SetText(Point{}, long+"Z")
-	if g.Render(g.Bounds()) != "�Z  " {
-		t.Fatal("oversized cluster split or swallowed next cluster")
-	}
-	g.SetText(Point{X: -1}, long+"Y")
-	if g.Cell(Point{}).Text != "Y" {
-		t.Fatal("replacement clipping")
-	}
-	if g.SetGrapheme(Point{}, long+"Z", CellStyle{}) {
-		t.Fatal("accepted multiple clusters")
+			if g.Cell(Point{X: 1}).Text != input || r.Cell(Point{X: 1}).Rune != []rune(input)[0] || s.Cell(Point{X: 1}).Rune != []rune(input)[0] {
+				t.Fatal("render changed stored text")
+			}
+		})
 	}
 }

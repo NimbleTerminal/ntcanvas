@@ -1,6 +1,10 @@
-package ntcanvas
+package ntcanvasgrid
 
-import "image"
+import (
+	"image"
+
+	"nimbleterminal.dev/ntcanvas/internal/cellstore"
+)
 
 // RuneCell is a rune and compact terminal style. Zero renders as a space.
 type RuneCell struct {
@@ -15,7 +19,7 @@ type RuneCell struct {
 // layout must follow display columns. Controls are replaced on every write.
 // Grids are pointer-owned and not safe for concurrent mutation; do not copy them.
 type RuneGrid struct {
-	storage[RuneCell]
+	cells cellstore.Storage[RuneCell]
 	// Style is the default style for future writes, not existing cells.
 	Style CellStyle
 	// SingleColumn replaces non-one-column runes during rendering, without changing stored cells.
@@ -36,11 +40,11 @@ func NewRuneGridChecked(w, h int, l SizeLimits) (*RuneGrid, error) {
 }
 
 // Bounds returns the grid rectangle, with its origin at (0, 0).
-func (g *RuneGrid) Bounds() image.Rectangle { return g.area }
+func (g *RuneGrid) Bounds() image.Rectangle { return g.cells.Area }
 
 // Resize preserves overlapping cells and clamps negative dimensions to zero.
 // It panics with ErrInvalidSize if allocation arithmetic would overflow.
-func (g *RuneGrid) Resize(w, h int) { g.resize(w, h) }
+func (g *RuneGrid) Resize(w, h int) { g.cells.Resize(w, h) }
 
 // ResizeChecked validates dimensions before resizing. A rejected request
 // leaves the grid unchanged.
@@ -54,26 +58,26 @@ func (g *RuneGrid) ResizeChecked(w, h int, l SizeLimits) error {
 
 // Clear resets every cell to empty content and a zero style, preserving dimensions
 // and the default Style used for future writes.
-func (g *RuneGrid) Clear() { g.clear() }
+func (g *RuneGrid) Clear() { g.cells.Clear() }
 
 // Cell returns a copy of the cell at p, or a zero cell outside Bounds.
 func (g *RuneGrid) Cell(p Point) RuneCell {
-	if !p.In(g.area) {
+	if !p.In(g.cells.Area) {
 		return RuneCell{}
 	}
-	return g.content[p.Y][p.X]
+	return g.cells.Content[p.Y][p.X]
 }
 
 // SetCell writes c at p, replacing control runes with U+FFFD. A zero rune
 // clears the content while retaining c.Style. It returns false outside Bounds.
 func (g *RuneGrid) SetCell(p Point, c RuneCell) bool {
-	if !p.In(g.area) {
+	if !p.In(g.cells.Area) {
 		return false
 	}
 	if c.Rune != 0 {
-		c.Rune = plainRune(c.Rune)
+		c.Rune = cellstore.PlainRune(c.Rune)
 	}
-	g.content[p.Y][p.X] = c
+	g.cells.Content[p.Y][p.X] = c
 	return true
 }
 
@@ -94,18 +98,18 @@ func (g *RuneGrid) SetText(p Point, s string) bool { return g.SetTextWithStyle(p
 // SetTextWithStyle is SetText with an explicit style. It returns false for an
 // invalid row and true even when the text is fully clipped.
 func (g *RuneGrid) SetTextWithStyle(p Point, s string, style CellStyle) bool {
-	if p.Y < 0 || p.Y >= g.area.Dy() {
+	if p.Y < 0 || p.Y >= g.cells.Area.Dy() {
 		return false
 	}
-	if p.X >= g.area.Dx() || (p.X < 0 && p.X <= -len(s)) {
+	if p.X >= g.cells.Area.Dx() || (p.X < 0 && p.X <= -len(s)) {
 		return true
 	}
 	for _, r := range s {
-		if p.X >= g.area.Dx() {
+		if p.X >= g.cells.Area.Dx() {
 			break
 		}
 		if p.X >= 0 {
-			g.content[p.Y][p.X] = RuneCell{plainRune(r), style}
+			g.cells.Content[p.Y][p.X] = RuneCell{cellstore.PlainRune(r), style}
 		}
 		p.X++
 	}
@@ -116,9 +120,9 @@ func (g *RuneGrid) SetTextWithStyle(p Point, s string, style CellStyle) bool {
 // It leaves the default Style unchanged.
 func (g *RuneGrid) FillRect(r image.Rectangle, c RuneCell) {
 	if c.Rune != 0 {
-		c.Rune = plainRune(c.Rune)
+		c.Rune = cellstore.PlainRune(c.Rune)
 	}
-	g.fillRect(r, c)
+	g.cells.FillRect(r, c)
 }
 
 // ClearRect resets r intersected with Bounds to empty, unstyled cells.
@@ -127,10 +131,10 @@ func (g *RuneGrid) ClearRect(r image.Rectangle) { g.FillRect(r, RuneCell{}) }
 // SetStyleRect replaces styles in r intersected with Bounds, preserving runes
 // and the default Style used for future writes.
 func (g *RuneGrid) SetStyleRect(r image.Rectangle, s CellStyle) {
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	for y := r.Min.Y; y < r.Max.Y; y++ {
 		for x := r.Min.X; x < r.Max.X; x++ {
-			g.content[y][x].Style = s
+			g.cells.Content[y][x].Style = s
 		}
 	}
 }
@@ -139,13 +143,13 @@ func (g *RuneGrid) SetStyleRect(r image.Rectangle, s CellStyle) {
 // to both grids without changing that mapping. Blank cells overwrite content.
 // Overlaps use a snapshot; temporary storage is proportional to the copied area.
 func (g *RuneGrid) CopyRect(dst Point, src *RuneGrid, r image.Rectangle) {
-	g.copyRect(dst, &src.storage, r)
+	g.cells.CopyRect(dst, &src.cells, r)
 }
 
 // Render clips r to Bounds and joins visible rows without a trailing newline.
 // An empty intersection returns an empty string.
 func (g *RuneGrid) Render(r image.Rectangle) string {
-	r = r.Intersect(g.area)
+	r = r.Intersect(g.cells.Area)
 	if r.Empty() {
 		return ""
 	}
@@ -156,15 +160,15 @@ func (g *RuneGrid) Render(r image.Rectangle) string {
 		}
 		var previous rune
 		for x := r.Min.X; x < r.Max.X; x++ {
-			c := g.content[y][x]
+			c := g.cells.Content[y][x]
 			v := c.Rune
 			if g.SingleColumn {
-				v = singleColumnRune(v)
+				v = cellstore.SingleColumnRune(v)
 			}
 			if v == 0 {
 				v = ' '
 			}
-			if g.SingleColumn && previous != 0 && needsGraphemeBoundary(string(previous), string(v)) {
+			if g.SingleColumn && previous != 0 && cellstore.NeedsGraphemeBoundary(string(previous), string(v)) {
 				w.WriteRune('\u200c')
 			}
 			w.cell(string(v), c.Style)

@@ -166,10 +166,10 @@ func TestFill(t *testing.T) {
 func TestFloat64Point(t *testing.T) {
 	x := -1.5
 	y := 2.5
-	f := Float64Point{x, y}
+	f := Float64Point{X: x, Y: y}
 
 	scale := 2.0
-	sc := Float64Point{scale, scale}
+	sc := Float64Point{X: scale, Y: scale}
 	nf := f.Mul(sc)
 	if nf.X != x*scale {
 		t.Errorf("Float64Point X value did not Mul correctly:%f", nf.X)

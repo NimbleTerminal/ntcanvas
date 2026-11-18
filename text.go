@@ -2,25 +2,8 @@ package ntcanvas
 
 import (
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
-	"strings"
-	"unicode"
-	"unicode/utf8"
+	"nimbleterminal.dev/ntcanvas/internal/cellstore"
 )
-
-func plainRune(r rune) rune {
-	// Also neutralize bidi/format controls and Unicode line/paragraph separators.
-	if unicode.IsControl(r) || unicode.In(r, unicode.Cf, unicode.Zl, unicode.Zp) {
-		return utf8.RuneError
-	}
-	return r
-}
-
-// SanitizeText replaces control, format, and line/paragraph separator runes with
-// U+FFFD, including ESC, C0/C1, DEL, tabs, newlines, bidi controls, and joiners.
-// Invalid UTF-8 also becomes U+FFFD. This neutralizes terminal controls, but does
-// not interpret/remove ANSI sequences or make Unicode glyphs one column wide.
-func SanitizeText(s string) string { return strings.Map(plainRune, s) }
 
 // SetText writes text using the default style. Controls are
 // replaced as in SanitizeText, one stored cell per rune. The
@@ -52,46 +35,11 @@ func (m *StyledRuneGrid) writeString(p Point, s string, style lipgloss.Style, pl
 		}
 		if x >= 0 {
 			if plain {
-				r = plainRune(r)
+				r = cellstore.PlainRune(r)
 			}
-			m.content[p.Y][x] = NewCellWithStyle(r, style)
+			m.cells.Content[p.Y][x] = NewCellWithStyle(r, style)
 		}
 		x++
 	}
 	return true
-}
-
-// singleColumnRune is a rendering policy, not a storage conversion. Empty cells
-// stay blank; all other runes must be sanitized and one column under Charm's rules.
-func singleColumnRune(r rune) rune {
-	if r == 0 {
-		return 0
-	}
-	r = plainRune(r)
-	if r >= ' ' && r <= '~' {
-		return r
-	}
-	if ansi.StringWidth(string(r)) != 1 || attachesAfterBoundary(string(r)) {
-		return utf8.RuneError
-	}
-	return r
-}
-
-// needsGraphemeBoundary detects cells that would merge when concatenated.
-// SGR style changes alone do not establish a grapheme boundary.
-func needsGraphemeBoundary(previous, text string) bool {
-	if previous == "" || len(previous) == 1 && len(text) == 1 {
-		return false
-	}
-	cluster, _ := ansi.FirstGraphemeCluster(previous+text, ansi.GraphemeWidth)
-	return len(cluster) > len(previous)
-}
-
-// attachesAfterBoundary identifies leading marks that absorb a cell even with
-// our ZWNJ separator. Their standalone width is not safe when concatenated.
-func attachesAfterBoundary(text string) bool {
-	if len(text) == 1 {
-		return false
-	}
-	return needsGraphemeBoundary(" \u200c", text)
 }

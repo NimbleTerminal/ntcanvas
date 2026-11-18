@@ -1,6 +1,6 @@
 // ntcharts - Copyright (c) 2024 Neomantra Corp.
 
-package ntcanvas
+package ntcanvasgrid
 
 import (
 	"image"

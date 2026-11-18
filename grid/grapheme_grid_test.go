@@ -1,4 +1,4 @@
-package ntcanvas
+package ntcanvasgrid
 
 import (
 	"image"
@@ -11,8 +11,8 @@ import (
 
 func assertClusters(t *testing.T, g *GraphemeGrid) {
 	t.Helper()
-	for y := 0; y < g.area.Dy(); y++ {
-		for x := 0; x < g.area.Dx(); x++ {
+	for y := 0; y < g.cells.Area.Dy(); y++ {
+		for x := 0; x < g.cells.Area.Dx(); x++ {
 			c := g.Cell(Point{X: x, Y: y})
 			if c.Continuation {
 				if x == 0 {
@@ -29,7 +29,7 @@ func assertClusters(t *testing.T, g *GraphemeGrid) {
 				if ansi.StringWidth(c.Text) != c.Width {
 					t.Fatal("width", c)
 				}
-				if c.Width == 2 && (x+1 >= g.area.Dx() || !g.Cell(Point{X: x + 1, Y: y}).Continuation) {
+				if c.Width == 2 && (x+1 >= g.cells.Area.Dx() || !g.Cell(Point{X: x + 1, Y: y}).Continuation) {
 					t.Fatal("missing continuation", x, y)
 				}
 			}
@@ -37,12 +37,13 @@ func assertClusters(t *testing.T, g *GraphemeGrid) {
 	}
 	if !g.Bounds().Empty() {
 		for _, row := range strings.Split(g.Render(g.Bounds()), "\n") {
-			if ansi.StringWidth(row) != g.area.Dx() {
+			if ansi.StringWidth(row) != g.cells.Area.Dx() {
 				t.Fatalf("render width: %q", row)
 			}
 		}
 	}
 }
+
 func TestGraphemeText(t *testing.T) {
 	g := NewGraphemeGrid(12, 1)
 	g.SetText(Point{}, "Ae\u0301界👩‍💻🇺🇸Z")
@@ -169,34 +170,5 @@ func TestIndependentClustersDoNotMergeOnRender(t *testing.T) {
 			t.Fatal("missing cluster boundary")
 		}
 		assertClusters(t, g)
-	}
-}
-
-// These positive-width standalone marks still attach after a ZWNJ separator.
-func TestStandaloneSpacingMarks(t *testing.T) {
-	for _, input := range []string{"\u17c7", "\u1a55", "\u1929", "\U000114bb", "\u1a57", "\u1ad1", "\u0ac0", "\u1a71", "\u1a6e"} {
-		t.Run(input, func(t *testing.T) {
-			g := NewGraphemeGrid(8, 2)
-			r := NewRuneGrid(8, 2)
-			s := NewStyledRuneGrid(8, 2)
-			r.SingleColumn, s.SingleColumn = true, true
-			for y := range 2 {
-				g.SetText(Point{X: 1, Y: y}, input)
-				r.SetText(Point{X: 1, Y: y}, input)
-				s.SetText(Point{X: 1, Y: y}, input)
-			}
-			for _, grid := range []Surface{g, r, s} {
-				for _, rect := range []image.Rectangle{grid.Bounds(), image.Rect(1, 0, 3, 2)} {
-					for _, row := range strings.Split(grid.Render(rect), "\n") {
-						if width := ansi.StringWidth(row); width != rect.Dx() {
-							t.Fatalf("%T %q: width %d, want %d", grid, row, width, rect.Dx())
-						}
-					}
-				}
-			}
-			if g.Cell(Point{X: 1}).Text != input || r.Cell(Point{X: 1}).Rune != []rune(input)[0] || s.Cell(Point{X: 1}).Rune != []rune(input)[0] {
-				t.Fatal("render changed stored text")
-			}
-		})
 	}
 }

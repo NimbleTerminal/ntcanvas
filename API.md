@@ -2,6 +2,15 @@
 
 Import `nimbleterminal.dev/ntcanvas`; its package name is `ntcanvas`.
 
+The compact grids, their styling, points, and the line rasterizers also stand on
+their own as `nimbleterminal.dev/ntcanvas/grid`, package `ntcanvasgrid`, which
+imports neither Bubble Tea, Lip Gloss, nor bubblezone. Use it where a program
+fills a grid and renders it to a string without a terminal UI: a renderer, a
+test, a command-line tool. Everything in it is re-exported from `ntcanvas` under
+the same name, and `ntcanvas.GraphemeGrid` and `ntcanvasgrid.GraphemeGrid` are
+one type, so the two can be mixed. `StyledRuneGrid`, `Surface`, and `Model`
+exist only in `ntcanvas`.
+
 ## Surface and Model
 
 ```go
@@ -259,8 +268,9 @@ fallback is slower and allocates, including during coverage calculation.
 
 Each grid has a `New…Checked(w, h, SizeLimits)` constructor and `ResizeChecked`.
 The styled constructor also accepts grid options. Invalid requests return errors;
-a rejected resize leaves the grid unchanged. `ValidateSize` uses a conservative
-allocation-overflow check sufficient for all three cell types.
+a rejected resize leaves the grid unchanged. `ntcanvas.ValidateSize` uses a
+conservative allocation-overflow check sufficient for all three cell types;
+`ntcanvasgrid.ValidateSize` checks for the larger of the two compact cells.
 Resizing to the current dimensions preserves storage without allocating or copying
 cells. `ResizeChecked` still validates the requested limits before this no-op.
 

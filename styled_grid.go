@@ -3,9 +3,11 @@
 package ntcanvas
 
 import (
-	"charm.land/lipgloss/v2"
 	"image"
 	"strings"
+
+	"charm.land/lipgloss/v2"
+	"nimbleterminal.dev/ntcanvas/internal/cellstore"
 )
 
 var defaultStyle = lipgloss.NewStyle()
@@ -35,7 +37,7 @@ type CellLine []Cell
 // Writes advance one cell per rune. Wide/combining runes and layout styles can
 // expand rendered output. Use one owning event loop; do not copy grid values.
 type StyledRuneGrid struct {
-	storage[Cell]
+	cells cellstore.Storage[Cell]
 	// Style is the default style for future writes, not existing cells.
 	Style lipgloss.Style
 	// SingleColumn replaces non-one-column runes during rendering. Styles remain trusted.
@@ -64,7 +66,7 @@ func NewStyledRuneGridChecked(w, h int, limits SizeLimits, opts ...StyledOption)
 }
 
 // Resize preserves overlapping cells; models viewing this grid keep their state.
-func (m *StyledRuneGrid) Resize(w, h int) { m.resize(w, h) }
+func (m *StyledRuneGrid) Resize(w, h int) { m.cells.Resize(w, h) }
 
 // ResizeChecked validates dimensions before resizing. A rejected request
 // leaves the grid unchanged.
@@ -77,11 +79,11 @@ func (m *StyledRuneGrid) ResizeChecked(w, h int, limits SizeLimits) error {
 }
 
 // Bounds returns the grid rectangle, with its origin at (0, 0).
-func (m *StyledRuneGrid) Bounds() image.Rectangle { return m.area }
+func (m *StyledRuneGrid) Bounds() image.Rectangle { return m.cells.Area }
 
 // Render clips to Bounds and joins visible rows without a trailing newline.
 func (m *StyledRuneGrid) Render(r image.Rectangle) string {
-	r = r.Intersect(m.area)
+	r = r.Intersect(m.cells.Area)
 	if r.Empty() {
 		return ""
 	}
@@ -93,15 +95,15 @@ func (m *StyledRuneGrid) Render(r image.Rectangle) string {
 		}
 		previous := ""
 		for x := r.Min.X; x < r.Max.X; x++ {
-			c := m.content[y][x]
+			c := m.cells.Content[y][x]
 			if m.SingleColumn {
-				c.Rune = singleColumnRune(c.Rune)
+				c.Rune = cellstore.SingleColumnRune(c.Rune)
 			}
 			text := " "
 			if c.Rune != 0 {
 				text = string(c.Rune)
 			}
-			if m.SingleColumn && needsGraphemeBoundary(previous, text) {
+			if m.SingleColumn && cellstore.NeedsGraphemeBoundary(previous, text) {
 				b.WriteRune('\u200c')
 			}
 			b.WriteString(c.Style.Render(text))
@@ -113,19 +115,19 @@ func (m *StyledRuneGrid) Render(r image.Rectangle) string {
 
 // Width returns the number of stored columns.
 func (m *StyledRuneGrid) Width() int {
-	return m.area.Dx()
+	return m.cells.Area.Dx()
 }
 
 // Height returns the number of stored rows.
 func (m *StyledRuneGrid) Height() int {
-	return m.area.Dy()
+	return m.cells.Area.Dy()
 }
 
 // Clear resets every cell to empty content and a zero style, preserving dimensions
 // and the default Style used for future writes.
 func (m *StyledRuneGrid) Clear() {
-	for i := range m.content {
-		clear(m.content[i])
+	for i := range m.cells.Content {
+		clear(m.cells.Content[i])
 	}
 }
 
@@ -139,7 +141,7 @@ func (m *StyledRuneGrid) SetLines(lines []string) {
 // beyond each written line and clips rows outside Bounds.
 func (m *StyledRuneGrid) SetLinesWithStyle(lines []string, s lipgloss.Style) {
 	for y, l := range lines {
-		if y >= m.area.Dy() {
+		if y >= m.cells.Area.Dy() {
 			break
 		}
 		m.SetTextWithStyle(Point{X: 0, Y: y}, l, s)
@@ -176,7 +178,7 @@ func (m *StyledRuneGrid) SetRunesWithStyle(p Point, l []rune, s lipgloss.Style) 
 	}
 	x := max(0, p.X)
 	for _, r := range l[start : start+min(len(l)-start, m.Width()-x)] {
-		m.content[p.Y][x] = NewCellWithStyle(plainRune(r), s)
+		m.cells.Content[p.Y][x] = NewCellWithStyle(cellstore.PlainRune(r), s)
 		x++
 	}
 	return true
@@ -185,33 +187,33 @@ func (m *StyledRuneGrid) SetRunesWithStyle(p Point, l []rune, s lipgloss.Style) 
 // SetCell writes c at p, replacing control runes with U+FFFD. A zero rune
 // clears the content while retaining c.Style. It returns false outside Bounds.
 func (m *StyledRuneGrid) SetCell(p Point, c Cell) bool {
-	if !p.In(m.area) {
+	if !p.In(m.cells.Area) {
 		return false
 	}
 	if c.Rune != 0 {
-		c.Rune = plainRune(c.Rune)
+		c.Rune = cellstore.PlainRune(c.Rune)
 	}
-	m.content[p.Y][p.X] = c
+	m.cells.Content[p.Y][p.X] = c
 	return true
 }
 
 // SetCellStyle replaces the style at p without changing its rune.
 // It returns false outside Bounds. Styles and their callbacks remain trusted.
 func (m *StyledRuneGrid) SetCellStyle(p Point, s lipgloss.Style) bool {
-	if !p.In(m.area) {
+	if !p.In(m.cells.Area) {
 		return false
 	}
-	m.content[p.Y][p.X].Style = s
+	m.cells.Content[p.Y][p.X].Style = s
 	return true
 }
 
 // GetCellStyle returns a pointer to a copy, or nil outside the grid.
 // Application-provided styles and their callbacks remain trusted.
 func (m *StyledRuneGrid) GetCellStyle(p Point) *lipgloss.Style {
-	if !p.In(m.area) {
+	if !p.In(m.cells.Area) {
 		return nil
 	}
-	copyStyle := m.content[p.Y][p.X].Style
+	copyStyle := m.cells.Content[p.Y][p.X].Style
 	return &copyStyle
 }
 
@@ -229,10 +231,10 @@ func (m *StyledRuneGrid) SetRuneWithStyle(p Point, r rune, style lipgloss.Style)
 
 // Cell returns a copy of the cell at p, or a zero cell outside Bounds.
 func (m *StyledRuneGrid) Cell(p Point) (c Cell) {
-	if !p.In(m.area) {
+	if !p.In(m.cells.Area) {
 		return
 	}
-	c = m.content[p.Y][p.X]
+	c = m.cells.Content[p.Y][p.X]
 	return
 }
 
@@ -252,27 +254,27 @@ func (m *StyledRuneGrid) FillLine(y int, c Cell) {
 // SetStyle replaces every cell style without changing content or the default
 // Style used for future writes.
 func (m *StyledRuneGrid) SetStyle(s lipgloss.Style) {
-	for i := range m.content {
-		for j := range m.content[i] {
-			m.content[i][j].Style = s
+	for i := range m.cells.Content {
+		for j := range m.cells.Content[i] {
+			m.cells.Content[i][j].Style = s
 		}
 	}
 }
 
 // ShiftUp moves stored cells up one row and clears the bottom row.
-func (m *StyledRuneGrid) ShiftUp() { m.shiftUp() }
+func (m *StyledRuneGrid) ShiftUp() { m.cells.ShiftUp() }
 
 // ShiftDown moves stored cells down one row and clears the top row.
-func (m *StyledRuneGrid) ShiftDown() { m.shiftDown() }
+func (m *StyledRuneGrid) ShiftDown() { m.cells.ShiftDown() }
 
 // ShiftLeft moves stored cells left one column and clears the right edge.
-func (m *StyledRuneGrid) ShiftLeft() { m.shiftLeft() }
+func (m *StyledRuneGrid) ShiftLeft() { m.cells.ShiftLeft() }
 
 // ShiftRight moves stored cells right one column and clears the left edge.
-func (m *StyledRuneGrid) ShiftRight() { m.shiftRight() }
+func (m *StyledRuneGrid) ShiftRight() { m.cells.ShiftRight() }
 
 func (m *StyledRuneGrid) insideYBounds(y int) bool {
-	if (y < 0) || (y >= m.area.Dy()) {
+	if (y < 0) || (y >= m.cells.Area.Dy()) {
 		return false
 	}
 	return true
