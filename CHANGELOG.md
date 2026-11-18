@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-11-17
+
+- Update Lip Gloss to v2.1.1, bubblezone to v2.0.1, and the examples and
+  browser runtime to booba v0.13.0.
 - Add `nimbleterminal.dev/ntcanvas/grid` (package `ntcanvasgrid`): `RuneGrid`,
   `GraphemeGrid`, `CellStyle` and its colors and attributes, `Point`,
   `Float64Point` and the coordinate conversions, `RasterLine`, `RasterLineAA`,
